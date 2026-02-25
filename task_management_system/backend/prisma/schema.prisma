@@ -1,6 +1,69 @@
-{
-  "task_management_system/backend/prisma/schema.prisma": "generator client {\n  provider = \"prisma-client-js\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url = env(\"DATABASE_URL\")\n}\n\nmodel User {\n  id            Int       @id @default(autoincrement())\n  username      String    @unique\n  email         String    @unique\n  passwordHash   String\n  role          UserRole  @default(USER)\n  departmentId  Int?\n  department    Department? @relation(fields: [departmentId], references: [id], onDelete: SET_NULL)\n  tasks         Task[]    @relation("UserTasks", onDelete: CASCADE)\n  comments      Comment[] @relation(onDelete: CASCADE)\n  auditLogs     AuditLog[] @relation(onDelete: CASCADE)\n}\n\nmodel Department {\n  id        Int     @id @default(autoincrement())\n  name      String  @unique\n  users     User[]  @relation(onDelete: CASCADE)\n}\n\nmodel Task {\n  id          Int       @id @default(autoincrement())\n  title       String    @index\n  description String?\n  status      TaskStatus @default(PENDING)\n  creatorId   Int\n  creator     User      @relation("UserTasks", fields: [creatorId], references: [id], onDelete: CASCADE)\n  comments    Comment[] @relation(onDelete: CASCADE)\n  auditLogs   AuditLog[] @relation(onDelete: CASCADE)\n}\n\nmodel Comment {\n  id        Int    @id @default(autoincrement())\n  content   String\n  taskId    Int\n  task      Task   @relation(fields: [taskId], references: [id], onDelete: CASCADE)\n  userId    Int\n  user      User   @relation(fields: [userId], references: [id], onDelete: SET_NULL)\n}\n\nmodel AuditLog {\n  id        Int      @id @default(autoincrement())\n  action    String\n  userId    Int\n  user      User      @relation(fields: [userId], references: [id], onDelete: SET_NULL)\n  createdAt DateTime @default(now())\n  taskId    Int?\n  task      Task?    @relation(fields: [taskId], references: [id], onDelete: SET_NULL)\n}\n\nenum UserRole {\n  ADMIN\n  USER\n}\n\nenum TaskStatus {\n  PENDING\n  IN_PROGRESS\n  COMPLETED\n  CANCELLED\n}",
-  "task_management_system/backend/prisma/seed.ts": "import { PrismaClient } from '@prisma/client';\nimport bcrypt from 'bcrypt';\n\const prisma = new PrismaClient();\n\nasync function main() {\n  const hashedPassword = await bcrypt.hash('admin123', 10);\n\n  const adminUser = await prisma.user.create({\n    data: {\n      username: 'admin',\n      email: 'admin@example.com',\n      passwordHash: hashedPassword,\n      role: 'ADMIN',\n      department: {\n        create: { name: 'Administration' },\n      },\n    },\n  });\n\n  const task1 = await prisma.task.create({\n    data: {\n      title: 'First Task',\n      description: 'This is the first task.',\n      creatorId: adminUser.id,\n    },\n  });\n\n  const comment1 = await prisma.comment.create({\n    data: {\n      content: 'This is a comment on the first task.',\n      taskId: task1.id,\n      userId: adminUser.id,\n    },\n  });\n\n  console.log({ adminUser, task1, comment1 });\n}\n\nmain()\n  .catch(e => {\n    console.error(e);\n    process.exit(1);\n  })\n  .finally(async () => {\n    await prisma.$disconnect();\n  });",
-  "task_management_system/scripts/db-backup.sh": "#!/bin/bash\n\n# Backup PostgreSQL database\nDB_NAME=\"your_database_name\"\nDB_USER=\"your_database_user\"\nDB_HOST=\"localhost\"\nDB_PORT=\"5432\"\nBACKUP_DIR=\"./backups\"\n\n# Create backup directory if it doesn't exist\nmkdir -p $BACKUP_DIR\n\n# Create a timestamp\nTIMESTAMP=$(date +\"%Y%m%d%H%M%S\")\n\n# Backup command\nPGPASSWORD=\"your_database_password\" pg_dump -U $DB_USER -h $DB_HOST -p $DB_PORT $DB_NAME > $BACKUP_DIR/db_backup_$TIMESTAMP.sql\n\n# Print success message\necho \"Backup of $DB_NAME completed successfully at $BACKUP_DIR/db_backup_$TIMESTAMP.sql\"",
-  "task_management_system/scripts/db-restore.sh": "#!/bin/bash\n\n# Restore PostgreSQL database\nDB_NAME=\"your_database_name\"\nDB_USER=\"your_database_user\"\nDB_HOST=\"localhost\"\nDB_PORT=\"5432\"\n\n# Restore command\nPGPASSWORD=\"your_database_password\" psql -U $DB_USER -h $DB_HOST -p $DB_PORT $DB_NAME < \"\$1\"\n\n# Print success message\nif [ $? -eq 0 ]; then\n  echo \"Database restored successfully from \$1\"\nelse\n  echo \"Failed to restore database from \$1\"\nfi"
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  username      String    @unique
+  email         String    @unique
+  passwordHash   String
+  role          UserRole  @default(USER)
+  departmentId  Int?
+  department    Department? @relation(fields: [departmentId], references: [id], onDelete: SET_NULL)
+  tasks         Task[]    @relation("UserTasks", onDelete: CASCADE)
+  comments      Comment[] @relation(onDelete: CASCADE)
+  auditLogs     AuditLog[] @relation(onDelete: CASCADE)
+}
+
+model Department {
+  id        Int     @id @default(autoincrement())
+  name      String  @unique
+  users     User[]  @relation(onDelete: CASCADE)
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  title       String    @unique
+  description String?
+  status      TaskStatus @default(PENDING)
+  creatorId   Int
+  creator     User      @relation("UserTasks", fields: [creatorId], references: [id], onDelete: CASCADE)
+  comments    Comment[] @relation(onDelete: CASCADE)
+  auditLogs   AuditLog[] @relation(onDelete: CASCADE)
+}
+
+model Comment {
+  id        Int    @id @default(autoincrement())
+  content   String
+  taskId    Int
+  task      Task   @relation(fields: [taskId], references: [id], onDelete: CASCADE)
+  userId    Int?
+  user      User?   @relation(fields: [userId], references: [id], onDelete: SET_NULL)
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  userId    Int?
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SET_NULL)
+  createdAt DateTime @default(now())
+  taskId    Int?
+  task      Task?    @relation(fields: [taskId], references: [id], onDelete: SET_NULL)
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }
