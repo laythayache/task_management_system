@@ -1,1 +1,1 @@
-task_management_system/.gitignore
+task_management_system/backend/prisma/schema.prisma
