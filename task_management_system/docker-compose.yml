@@ -1,6 +1,47 @@
-{
-  "task_management_system/docker-compose.yml": "version: '3.8'\n\nservices:\n  app:\n    build:\n      context: ./app\n      dockerfile: Dockerfile\n    environment:\n      - NODE_ENV=development\n      - DATABASE_URL=${DATABASE_URL}\n      - REDIS_URL=${REDIS_URL}\n      - JWT_SECRET=${JWT_SECRET}\n    volumes:\n      - ./app:/usr/src/app\n    ports:\n      - '3000:3000'\n    depends_on:\n      - db\n      - redis\n\n  db:\n    image: postgres:14\n    environment:\n      - POSTGRES_USER=${POSTGRES_USER}\n      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}\n      - POSTGRES_DB=${POSTGRES_DB}\n    volumes:\n      - db_data:/var/lib/postgresql/data\n    ports:\n      - '5432:5432'\n\n  redis:\n    image: redis:6\n    ports:\n      - '6379:6379'\n\n  nginx:\n    image: nginx:alpine\n    volumes:\n      - ./nginx.conf:/etc/nginx/nginx.conf\n    ports:\n      - '80:80'\n    depends_on:\n      - app\n\nvolumes:\n  db_data:\n",
-  "task_management_system/docker-compose.prod.yml": "version: '3.8'\n\nservices:\n  app:\n    build:\n      context: ./app\n      dockerfile: Dockerfile\n    environment:\n      - NODE_ENV=production\n      - DATABASE_URL=${DATABASE_URL}\n      - REDIS_URL=${REDIS_URL}\n      - JWT_SECRET=${JWT_SECRET}\n    ports:\n      - '3000:3000'\n    depends_on:\n      - db\n      - redis\n\n  db:\n    image: postgres:14\n    environment:\n      - POSTGRES_USER=${POSTGRES_USER}\n      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}\n      - POSTGRES_DB=${POSTGRES_DB}\n    volumes:\n      - db_data:/var/lib/postgresql/data\n\n  redis:\n    image: redis:6\n\n  nginx:\n    image: nginx:alpine\n    volumes:\n      - ./nginx.conf:/etc/nginx/nginx.conf\n    ports:\n      - '80:80'\n    depends_on:\n      - app\n\nvolumes:\n  db_data:\n",
-  "task_management_system/.env.example": "# Environment Variables\n# Replace the values with your own configurations\n\n# Database Configuration\nPOSTGRES_USER=your_user\nPOSTGRES_PASSWORD=your_password\nPOSTGRES_DB=your_db\nDATABASE_URL=postgresql://your_user:your_password@db:5432/your_db\n\n# Redis Configuration\nREDIS_URL=redis://redis:6379\n\n# JWT Configuration\nJWT_SECRET=your_jwt_secret\n",
-  "task_management_system/.gitignore": "# Node modules\nnode_modules/\n\n# Logs\nlogs/\n*.log\n\n# Environment variables\n.env\n\n# Build outputs\ndist/\n",
-  "task_management_system/README.md": "# Task Management System\n\n## Setup Instructions\n\n1. Clone the repository:\n
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      - ./app:/usr/src/app
+    ports:
+      - '3000:3000'
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:14
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+
+  redis:
+    image: redis:6
+    ports:
+      - '6379:6379'
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - '80:80'
+    depends_on:
+      - app
+
+volumes:
+  db_data:
