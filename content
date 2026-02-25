@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  username      String    @unique
+  email         String    @unique
+  passwordHash   String
+  role          UserRole  @default(USER)
+  departmentId  Int?
+  department    Department? @relation(fields: [departmentId], references: [id], onDelete: SET_NULL)
+  tasks         Task[]    @relation("UserTasks", onDelete: CASCADE)
+  comments      Comment[] @relation(onDelete: CASCADE)
+  auditLogs     AuditLog[] @relation(onDelete: CASCADE)
+}
+
+model Department {
+  id        Int     @id @default(autoincrement())
+  name      String  @unique
+  users     User[]  @relation(onDelete: CASCADE)
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  title       String    @unique
+  description String?
+  status      TaskStatus @default(PENDING)
+  creatorId   Int
+  creator     User      @relation("UserTasks", fields: [creatorId], references: [id], onDelete: CASCADE)
+  comments    Comment[] @relation(onDelete: CASCADE)
+  auditLogs   AuditLog[] @relation(onDelete: CASCADE)
+}
+
+model Comment {
+  id        Int    @id @default(autoincrement())
+  content   String
+  taskId    Int
+  task      Task   @relation(fields: [taskId], references: [id], onDelete: CASCADE)
+  userId    Int?
+  user      User?   @relation(fields: [userId], references: [id], onDelete: SET_NULL)
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  userId    Int?
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SET_NULL)
+  createdAt DateTime @default(now())
+  taskId    Int?
+  task      Task?    @relation(fields: [taskId], references: [id], onDelete: SET_NULL)
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
